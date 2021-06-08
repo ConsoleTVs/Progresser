@@ -8,7 +8,7 @@ $progress = Progresser::create();
 // Control methods
 $progress->start('Preparing information...');
 $progress->step('Done task 1');
-$progress->statis('Now doing this...');
+$progress->status('Now doing this...');
 $progress->complete('Done task 2');
 $progress->fail('Failed at task 2');
 
