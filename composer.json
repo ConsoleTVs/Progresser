@@ -1,0 +1,40 @@
+{
+    "name": "consoletvs/progresser",
+    "description": "Add progress to your laravel application",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Erik C. Forés",
+            "email": "soc@erik.cat"
+        }
+    ],
+    "scripts": {
+        "test": "./vendor/bin/phpunit"
+    },
+    "require": {
+        "illuminate/support": "^8.46",
+        "illuminate/database": "^8.46"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "orchestra/testbench": "^6.18"
+    },
+    "autoload": {
+        "psr-4": {
+            "ConsoleTVs\\Progresser\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ConsoleTVs\\Progresser\\Tests\\": "tests"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ConsoleTVs\\Progresser\\ProgresserServiceProvider"
+            ]
+        }
+    }
+}
