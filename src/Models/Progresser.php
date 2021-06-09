@@ -56,15 +56,15 @@ class Progresser extends Model
         'failed' => false,
         'failed_payload' => null,
     ];
-
+    
     /**
-     * Creates a new instance of the class.
+     * Get the table associated with the model.
+     *
+     * @return string
      */
-    public function __construct()
+    public function getTable()
     {
-        $this->setTable(Config::get('progresser.table'));
-
-        parent::__construct();
+        return config('progresser.table', parent::getTable());
     }
 
     /**
@@ -113,11 +113,11 @@ class Progresser extends Model
     }
 
     /**
-     * Determines if the progress is currently running.
+     * Determines if the progress has steps.
      *
      * @return bool
      */
-    public function isStepped(): bool
+    public function hasSteps(): bool
     {
         return $this->steps !== null;
     }
@@ -129,7 +129,7 @@ class Progresser extends Model
      */
     public function percentage(): ?float
     {
-        return ($this->isStepped())
+        return ($this->hasSteps())
             ? ($this->current_step * 100) / $this->steps
             : null;
     }
@@ -240,7 +240,7 @@ class Progresser extends Model
         // Check if the completion of the step
         // should mark the completion of the progress.
         $current_step = $this->current_step + 1;
-        if ($this->isStepped() && $current_step === $this->steps) {
+        if ($this->hasSteps() && $current_step === $this->steps) {
             return $this->complete($message);
         }
 
