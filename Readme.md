@@ -16,7 +16,7 @@ $progress->fail('Failed at task 2');
 $progress->isRunning();
 $progress->hasFailed();
 $progress->hasCompleted();
-$progress->isStepped();
+$progress->hasSteps();
 $progress->percentage();
 
 // Attributes
