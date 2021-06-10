@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace ConsoleTVs\Progresser\Tests\Feature;
 
-use ConsoleTVs\Progresser\Models\Progresser;
+use ConsoleTVs\Progresser\Models\Progress;
 use ConsoleTVs\Progresser\Tests\TestCase;
+use ConsoleTVs\Progresser\Traits\Progressable;
 use Exception;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 class ProgresserTest extends TestCase
 {
@@ -16,7 +19,7 @@ class ProgresserTest extends TestCase
     /** @test */
     public function it_can_create_stepped_progresses()
     {
-        $progress = Progresser::create();
+        $progress = Progress::create();
 
         $this->assertEquals($progress->isRunning(), false);
 
@@ -57,7 +60,7 @@ class ProgresserTest extends TestCase
     /** @test */
     public function it_can_create_stepped_progresses_with_complete()
     {
-        $progress = Progresser::create();
+        $progress = Progress::create();
 
         $this->assertEquals($progress->isRunning(), false);
 
@@ -98,7 +101,7 @@ class ProgresserTest extends TestCase
     /** @test */
     public function it_can_create_stepped_progresses_with_complete_2()
     {
-        $progress = Progresser::create();
+        $progress = Progress::create();
 
         $this->assertEquals($progress->isRunning(), false);
 
@@ -124,7 +127,7 @@ class ProgresserTest extends TestCase
     /** @test */
     public function it_can_create_progresses()
     {
-        $progress = Progresser::create();
+        $progress = Progress::create();
 
         $this->assertEquals($progress->isRunning(), false);
 
@@ -165,7 +168,7 @@ class ProgresserTest extends TestCase
     /** @test */
     public function it_can_fail_progresses()
     {
-        $progress = Progresser::create();
+        $progress = Progress::create();
 
         $this->assertEquals($progress->isRunning(), false);
 
@@ -197,7 +200,7 @@ class ProgresserTest extends TestCase
     /** @test */
     public function it_can_fail_progresses_with_payloads()
     {
-        $progress = Progresser::create();
+        $progress = Progress::create();
 
         $progress->start('Preparing information...');
 
@@ -220,7 +223,7 @@ class ProgresserTest extends TestCase
     /** @test */
     public function it_can_make_multiple_progresses()
     {
-        $progress = Progresser::create();
+        $progress = Progress::create();
 
         $progress->start('Preparing information...');
         $this->assertEquals($progress->isRunning(), true);
@@ -257,5 +260,86 @@ class ProgresserTest extends TestCase
         $this->assertEquals($progress->percentage(), null);
         $this->assertEquals($progress->hasCompleted(), true);
         $this->assertEquals($progress->status, 'Done task 2');
+    }
+
+    /** @test */
+    public function models_can_have_progresses()
+    {
+        Schema::create('stubs', function ($table) {
+            $table->temporary();
+            $table->increments('id');
+            $table->timestamps();
+        });
+
+        $stubClass = new class extends Model
+        {
+            use Progressable;
+
+            protected $table = 'stubs';
+        };
+
+        $stub = $stubClass::create();
+        $progress = $stub->progress('example-progress');
+        $progress2 = $stub->progress('example-progress-2');
+
+        $progress->start('Preparing information...');
+        $this->assertEquals($progress->isRunning(), true);
+        $this->assertEquals($progress->percentage(), null);
+        $this->assertEquals($progress->current_step, 0);
+        $this->assertEquals($progress->status, 'Preparing information...');
+
+        $progress->refresh();
+        $progress2->refresh();
+
+        $progress->step('Done task 1');
+        $this->assertEquals($progress->current_step, 1);
+        $this->assertEquals($progress->percentage(), null);
+        $this->assertEquals($progress->hasCompleted(), false);
+        $this->assertEquals($progress->status, 'Done task 1');
+
+        $progress->refresh();
+        $progress2->refresh();
+
+        $progress2->start('Preparing information 2...');
+        $this->assertEquals($progress2->isRunning(), true);
+        $this->assertEquals($progress2->percentage(), null);
+        $this->assertEquals($progress2->current_step, 0);
+        $this->assertEquals($progress2->status, 'Preparing information 2...');
+
+        $progress->refresh();
+        $progress2->refresh();
+
+        $progress->step('Done task 2');
+        $this->assertEquals($progress->current_step, 2);
+        $this->assertEquals($progress->percentage(), null);
+        $this->assertEquals($progress->hasCompleted(), false);
+        $this->assertEquals($progress->status, 'Done task 2');
+
+        $progress->refresh();
+        $progress2->refresh();
+
+        $progress2->complete('Done!');
+        $this->assertEquals($progress2->current_step, 1);
+        $this->assertEquals($progress2->percentage(), null);
+        $this->assertEquals($progress2->hasCompleted(), true);
+        $this->assertEquals($progress2->status, 'Done!');
+
+        $progress->refresh();
+        $progress2->refresh();
+
+        $progress->step('Done task 3');
+        $this->assertEquals($progress->current_step, 3);
+        $this->assertEquals($progress->percentage(), null);
+        $this->assertEquals($progress->hasCompleted(), false);
+        $this->assertEquals($progress->status, 'Done task 3');
+
+        $progress->refresh();
+        $progress2->refresh();
+
+        $progress->complete('Done task 4');
+        $this->assertEquals($progress->current_step, 4);
+        $this->assertEquals($progress->percentage(), null);
+        $this->assertEquals($progress->hasCompleted(), true);
+        $this->assertEquals($progress->status, 'Done task 4');
     }
 }

@@ -6,10 +6,11 @@ namespace ConsoleTVs\Progresser\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Config;
 use JsonSerializable;
 
-class Progresser extends Model
+class Progress extends Model
 {
     use HasFactory;
 
@@ -27,6 +28,7 @@ class Progresser extends Model
         'failed_payload',
         'default_completed_status',
         'default_failed_status',
+        'name',
     ];
 
     /**
@@ -56,7 +58,7 @@ class Progresser extends Model
         'failed' => false,
         'failed_payload' => null,
     ];
-    
+
     /**
      * Get the table associated with the model.
      *
@@ -301,5 +303,15 @@ class Progresser extends Model
             'failed' => false,
             'failed_payload' => null,
         ]);
+    }
+
+    /**
+     * Returns the progressable model.
+     *
+     * @return MorphTo|null
+     */
+    public function progressable(): ?MorphTo
+    {
+        return $this->morphTo();
     }
 }

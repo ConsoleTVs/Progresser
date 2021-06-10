@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Config;
 
-class CreateProgresserTable extends Migration
+class CreateProgressablesTable extends Migration
 {
     /**
      * Stores the table name to use.
@@ -41,6 +41,8 @@ class CreateProgresserTable extends Migration
             $table->boolean('running')->default(false);
             $table->boolean('failed')->default(false);
             $table->json('failed_payload')->nullable();
+            $table->nullableMorphs('progressable');
+            $table->string('name')->nullable();
             $table->timestamps();
         });
     }
