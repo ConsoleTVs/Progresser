@@ -247,7 +247,7 @@ class Progress extends Model
         }
 
         return $this->update([
-            'status' => $message,
+            'status' => $message ?? $this->status,
             'current_step' => $current_step,
         ]);
     }
