@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Config;
 use JsonSerializable;
+use Illuminate\Database\Eloquent\Builder;
 
 class Progress extends Model
 {
@@ -29,6 +30,10 @@ class Progress extends Model
         'default_completed_status',
         'default_failed_status',
         'name',
+        'purgeable',
+        'group',
+        'purge_when_completed',
+        'purge_when_failed',
     ];
 
     /**
@@ -41,6 +46,9 @@ class Progress extends Model
         'steps' => 'integer',
         'running' => 'boolean',
         'failed' => 'boolean',
+        'purgeable' => 'boolean',
+        'purge_when_completed' => 'boolean',
+        'purge_when_failed' => 'boolean',
     ];
 
     /**
@@ -66,7 +74,7 @@ class Progress extends Model
      */
     public function getTable()
     {
-        return config('progresser.table', parent::getTable());
+        return Config::get('progresser.table', parent::getTable());
     }
 
     /**
@@ -77,11 +85,25 @@ class Progress extends Model
      */
     protected function getFailedPayloadAttribute(?string $value): mixed
     {
-        if ($value === null) {
-            return null;
-        }
+        return ($value === null)
+            ? null
+            : json_decode($value, associative: true);
+    }
 
-        return json_decode($value, associative: true);
+    /**
+     * Scopes the result to return only the running progresses.
+     * Additionaly, you can also specify the group you want to see.
+     *
+     * @param Builder $query
+     * @param bool $value
+     * @param string|null $group
+     * @return Builder
+     */
+    public function scopeRunning(Builder $query, bool $value = true, ?string $group = null): Builder
+    {
+        return $query
+            ->where('running', $value)
+            ->when($group, fn (Builder $query) => $query->where('group', $group));
     }
 
     /**
@@ -167,6 +189,31 @@ class Progress extends Model
     }
 
     /**
+     * Queries only the purgeable progressers.
+     *
+     * @param Builder $query
+     * @param bool $value
+     * @return Builder
+     */
+    public function scopePurgeable(Builder $query, bool $value = true): Builder
+    {
+        return $query->where('purgeable', $value);
+    }
+
+    /**
+     * Sets the purgeable attribute of the given progress.
+     *
+     * @param bool $value
+     * @return static
+     */
+    public function purgeable(bool $value = true): static
+    {
+        $this->purgeable = $value;
+
+        return $this;
+    }
+
+    /**
      * Sets the default statues.
      *
      * @param string|null $completed_status
@@ -218,13 +265,35 @@ class Progress extends Model
      */
     public function status(string $message): bool
     {
-        if (!$this->isRunning()) {
-            return false;
-        }
+        return (!$this->isRunning())
+            ? false
+            : $this->update(['status' => $message]);
+    }
 
-        return $this->update([
-            'status' => $message,
-        ]);
+    /**
+     * Determines if the progress should be purged when failed.
+     *
+     * @param bool $value
+     * @return static
+     */
+    public function purgeWhenFailed(bool $value = true): static
+    {
+        $this->purge_when_failed = $value;
+
+        return $this;
+    }
+
+    /**
+     * Determines if the progress should be purged when completed.
+     *
+     * @param bool $value
+     * @return static
+     */
+    public function purgeWhenCompleted(bool $value = true): static
+    {
+        $this->purge_when_completed = $value;
+
+        return $this;
     }
 
     /**
@@ -269,6 +338,10 @@ class Progress extends Model
             return false;
         }
 
+        if ($this->purgeable && $this->purge_when_failed) {
+            return $this->delete();
+        }
+
         return $this->update([
             'status' => $message ?? $this->default_failed_status ?? Config::get('progresser.statuses.failed'),
             'running' => false,
@@ -294,6 +367,10 @@ class Progress extends Model
     {
         if (!$this->isRunning()) {
             return false;
+        }
+
+        if ($this->purgeable && $this->purge_when_completed) {
+            return $this->delete();
         }
 
         return $this->update([

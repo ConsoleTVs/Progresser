@@ -6,6 +6,7 @@ namespace ConsoleTVs\Progresser\Traits;
 
 use ConsoleTVs\Progresser\Models\Progress;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Str;
 
 trait Progressable
 {
@@ -20,17 +21,18 @@ trait Progressable
     }
 
     /**
-     * Returns the first progress.
+     * Finds the given progress on the model.
      *
-     * @param string $name
-     * @return Progress
+     * @param string|null $name
+     * @param string|null $group
+     * @return Progress|null
      */
-    public function progress(string $name): Progress
+    public function findProgress(?string $name = null, ?string $group = null): ?Progress
     {
         return $this
             ->progresses()
-            ->firstOrCreate([
-                'name' => $name
-            ]);
+            ->when($name, fn (Builder $query) => $query->where('name', $name))
+            ->when($group, fn (Builder $query) => $query->where('group', $group))
+            ->first();
     }
 }
