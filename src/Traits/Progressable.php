@@ -6,7 +6,6 @@ namespace ConsoleTVs\Progresser\Traits;
 
 use ConsoleTVs\Progresser\Models\Progress;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Str;
 
 trait Progressable
 {
