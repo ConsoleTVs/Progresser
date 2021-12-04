@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ConsoleTVs\Progresser\Traits;
 
 use ConsoleTVs\Progresser\Models\Progress;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 trait Progressable
